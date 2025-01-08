@@ -35,23 +35,25 @@ function grafana.initalise(initTable)
 	authenticationData.user = initTable.user
 	authenticationData.password = initTable.password
 	authenticationData.logUrl = initTable.logUrl -- where Loki is
-	authenticationData.app = initTable.app -- where to put that data
 	
 	initalised = true
 end
 
-function grafana.sendLog(table)
+function grafana.sendLog(app, table, level)
 	if initalised == false then
 		print("sendLog was called but Grafana hasn't been initalised yet!")
 		return
+	end
+	if level == nil then
+		level = "info"
 	end
 
 	local POSTData = {
 		["streams"] = {
 			{
 				["stream"] = {
-					["level"] = "info",
-					["app"] = authenticationData.app
+					["level"] = level,
+					["app"] = app
 				},
 				["values"] = {
 					{
@@ -64,8 +66,6 @@ function grafana.sendLog(table)
 	}
 	
 	local JSONEncoded = json.encode(POSTData)
-
-	print(JSONEncoded)
 
 	local handle = internet.request(authenticationData.logUrl .."/loki/api/v1/push", JSONEncoded, { ["Content-Type"] = "application/json" }, "POST")
 	local metatable = getmetatable(handle)
